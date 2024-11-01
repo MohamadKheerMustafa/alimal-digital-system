@@ -15,6 +15,8 @@ class User extends Authenticatable implements LaratrustUser, JWTSubject
 
     use HasRolesAndPermissions;
 
+    protected $with = ['profile'];
+
     /**
      * The attributes that are mass assignable.
      *
@@ -64,5 +66,10 @@ class User extends Authenticatable implements LaratrustUser, JWTSubject
     public function getJWTCustomClaims()
     {
         return [];
+    }
+
+    public function profile()
+    {
+        return $this->hasOne(Profile::class, 'user_id');
     }
 }

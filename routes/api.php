@@ -1,7 +1,8 @@
 <?php
 
+use App\Http\Controllers\ArchiveController;
 use App\Http\Controllers\AuthController;
-use Illuminate\Http\Request;
+use App\Http\Controllers\CategoryController;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -15,9 +16,41 @@ use Illuminate\Support\Facades\Route;
 |
 */
 
-Route::group(['middleware' => 'api', 'prefix' => 'auth'], function ($router) {
-    Route::post('login', [AuthController::class , 'login']);
-    Route::post('logout', 'AuthController@logout');
-    Route::post('refresh', 'AuthController@refresh');
-    Route::post('me', 'AuthController@me');
+Route::group(['middleware' => 'api'], function ($router) {
+    /*------------------------------------ Alimal Digital Api's ------------------------------------*/
+    Route::group(['prefix' => 'app/v1'], function ($router) {
+
+        /*------------------------------------ Start Auth Api's ------------------------------------*/
+        Route::group(['prefix' => 'auth'], function ($router) {
+            Route::post('login', [AuthController::class, 'login']);
+            Route::post('logout', [AuthController::class, 'logout']);
+            Route::post('refresh', [AuthController::class, 'refresh']);
+            Route::get('me', function () {
+                return auth()->user();
+            });
+        });
+        /*------------------------------------ End Auth Api's ------------------------------------*/
+
+        /*------------------------------------ Start Archives Api's ------------------------------------*/
+        Route::group(['prefix' => 'archives'], function ($router) {
+            Route::get('all', [ArchiveController::class, 'index']);
+            Route::get('get/{id}', [ArchiveController::class, 'get']);
+            Route::post('upload', [ArchiveController::class, 'upload']);
+            Route::get('download', [ArchiveController::class, 'download']);
+            Route::delete('delete/{id}', [ArchiveController::class, 'destroy']);
+        });
+        /*------------------------------------ End Archives Api's ------------------------------------*/
+
+        /*------------------------------------ Start Categories Api's ------------------------------------*/
+        Route::group(['prefix' => 'categories'], function ($router) {
+            Route::get('all', [CategoryController::class, 'index']);
+            Route::get('get/{id}', [CategoryController::class, 'show']);
+            Route::post('add', [CategoryController::class, 'store']);
+            Route::put('update/{id}', [CategoryController::class, 'update']);
+            Route::delete('delete/{id}', [CategoryController::class, 'destroy']);
+
+            Route::get('getArchivesBasedOnCategory/{category_id}', [CategoryController::class, 'getArchivesBasedOnCategory']);
+        });
+        /*------------------------------------ End Categories Api's ------------------------------------*/
+    });
 });

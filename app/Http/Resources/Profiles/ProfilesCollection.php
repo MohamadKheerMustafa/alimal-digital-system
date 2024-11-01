@@ -1,11 +1,11 @@
 <?php
 
-namespace App\Http\Resources\Users;
+namespace App\Http\Resources\Profiles;
 
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\ResourceCollection;
 
-class UsersCollection extends ResourceCollection
+class ProfilesCollection extends ResourceCollection
 {
     /**
      * Transform the resource collection into an array.
@@ -26,7 +26,7 @@ class UsersCollection extends ResourceCollection
             "prev_page_url" => $this->previousPageUrl(),
             "to" => $this->lastItem(),
             "total" => $this->total(),
-            'items' => UsersResource::collection($this->collection),
+            'items' => ProfilesResource::collection($this->collection),
         ];
     }
 }

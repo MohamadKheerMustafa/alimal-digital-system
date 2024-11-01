@@ -2,6 +2,7 @@
 
 namespace App\Http\Resources\Users;
 
+use App\Http\Resources\Profiles\ProfilesResource;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 
@@ -22,6 +23,7 @@ class UsersResource extends JsonResource
             'remember_token' => $this->remember_token,
             'created_at' => $this->created_at,
             'updated_at' => $this->updated_at,
+            'profile' => ProfilesResource::make($this->whenLoaded('profile')),
             'token' => $this->when(isset($this->token), $this->token),
             'roles' => $this->roles()->with('permissions')->get(),
         ];

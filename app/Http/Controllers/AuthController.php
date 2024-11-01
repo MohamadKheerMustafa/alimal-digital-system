@@ -2,12 +2,13 @@
 
 namespace App\Http\Controllers;
 
+use App\ApiCode;
 use App\Http\Resources\Users\UsersResource;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
 use Tymon\JWTAuth\Facades\JWTAuth;
 
-class AuthController extends Controller
+class AuthController extends AppBaseController
 {
     /**
      * Create a new AuthController instance.
@@ -29,26 +30,15 @@ class AuthController extends Controller
         $credentials = $request->only(['email', 'password']);
 
         if (!$token = JWTAuth::attempt($credentials)) {
-            return response()->json(['error' => 'Unauthorized'], 401);
+            $data = ['data' => null, 'message' => 'Unauthorized', 'statusCode' => ApiCode::UNAUTHORIZED];
         }
 
-        Log::alert($token);
         $user = auth()->user();
         $user->token = $token;
 
-        return UsersResource::make($user);
-
-        // return $this->respondWithToken($token);
-    }
-
-    /**
-     * Get the authenticated User.
-     *
-     * @return \Illuminate\Http\JsonResponse
-     */
-    public function me()
-    {
-        return response()->json(auth()->user());
+        Log::alert($request);
+        $data = ['data' => UsersResource::make($user), 'message' => 'Logged in successfully', 'statusCode' => ApiCode::SUCCESS];
+        return $this->handleResponse($data['statusCode'], $data['data'], $data['message']);
     }
 
     /**
@@ -60,7 +50,7 @@ class AuthController extends Controller
     {
         auth()->logout();
 
-        return response()->json(['message' => 'Successfully logged out']);
+        return $this->handleResponse(ApiCode::SUCCESS, null, 'Successfully logged out');
     }
 
     /**
@@ -70,22 +60,12 @@ class AuthController extends Controller
      */
     public function refresh()
     {
-        return $this->respondWithToken(auth()->refresh());
-    }
+        $auth = auth()->refresh();
+        $user = auth()->user();
 
-    /**
-     * Get the token array structure.
-     *
-     * @param  string $token
-     *
-     * @return \Illuminate\Http\JsonResponse
-     */
-    protected function respondWithToken($token)
-    {
-        return response()->json([
-            'access_token' => $token,
-            'token_type' => 'bearer',
-            'expires_in' => auth()->factory()->getTTL() * 60
-        ]);
+        $user->token = $auth;
+
+        $data = ['data' => UsersResource::make($user), 'message' => 'Logged in successfully', 'statusCode' => ApiCode::SUCCESS];
+        return $this->handleResponse($data['statusCode'], $data['data'], $data['message']);
     }
 }
