@@ -1,4 +1,4 @@
-const { exec } = require("child_process");
+import { exec } from "child_process";
 
 exec(
     "php /var/www/alimal-digital-system queue:work",
