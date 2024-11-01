@@ -15,20 +15,20 @@ class UserObserver
      */
     public function created(User $user): void
     {
-        $department = $user->profile()->department();
+        // $department = $user->profile()->department();
 
-        // Main Category!!
-        $parentCategory = Category::where('name', $department->name)->first();
+        // // Main Category!!
+        // $parentCategory = Category::where('name', $department->name)->first();
 
-        // Generate the permission name using the parent and subcategory names
-        $permissionName = 'upload-archive-' . Str::slug($parentCategory->name . '-' . $department->name);
+        // // Generate the permission name using the parent and subcategory names
+        // $permissionName = 'upload-archive-' . Str::slug($parentCategory->name . '-' . $department->name);
 
-        // Check if the permission already exists in the database
-        if (!Permission::where('name', $permissionName)->exists()) {
-            // Create the permission
-            $permission = Permission::create(['name' => $permissionName]);
-            $user->givePermission($permission);
-        }
+        // // Check if the permission already exists in the database
+        // if (!Permission::where('name', $permissionName)->exists()) {
+        //     // Create the permission
+        //     $permission = Permission::create(['name' => $permissionName]);
+        //     $user->givePermission($permission);
+        // }
     }
 
     /**
