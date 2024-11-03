@@ -14,18 +14,18 @@ class CategoryObserver
     public function created(Category $category): void
     {
         // Check if the category has a parent (i.e., it's a subcategory)
-        if ($category->parent_id) {
-            $parentCategory = Category::find($category->parent_id);
+        // if ($category->parent_id) {
+        //     $parentCategory = Category::find($category->parent_id);
 
-            // Generate the permission name using the parent and subcategory names
-            $permissionName = 'upload-archive-' . Str::slug($parentCategory->name . '-' . $category->name);
+        //     // Generate the permission name using the parent and subcategory names
+        //     $permissionName = 'upload-archive-' . Str::slug($parentCategory->name . '-' . $category->name);
 
-            // Check if the permission already exists in the database
-            if (!Permission::where('name', $permissionName)->exists()) {
-                // Create the permission
-                Permission::create(['name' => $permissionName]);
-            }
-        }
+        //     // Check if the permission already exists in the database
+        //     if (!Permission::where('name', $permissionName)->exists()) {
+        //         // Create the permission
+        //         Permission::create(['name' => $permissionName]);
+        //     }
+        // }
     }
 
     /**
