@@ -3,6 +3,7 @@
 use App\Http\Controllers\ArchiveController;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\CategoryController;
+use App\Http\Controllers\UserController;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -40,6 +41,16 @@ Route::group(['middleware' => 'api'], function ($router) {
             Route::delete('delete/{id}', [ArchiveController::class, 'destroy']);
         });
         /*------------------------------------ End Archives Api's ------------------------------------*/
+
+        /*------------------------------------ Start users Api's ------------------------------------*/
+        Route::group(['prefix' => 'users'], function ($router) {
+            Route::get('all', [UserController::class, 'index']);
+            Route::get('get/{id}', [UserController::class, 'get']);
+            Route::post('add', [UserController::class, 'store']);
+            Route::put('update/{id}', [UserController::class, 'update']);
+            Route::delete('delete/{id}', [UserController::class, 'destroy']);
+        });
+        /*------------------------------------ End users Api's ------------------------------------*/
 
         /*------------------------------------ Start Categories Api's ------------------------------------*/
         Route::group(['prefix' => 'categories'], function ($router) {
