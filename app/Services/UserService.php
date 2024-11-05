@@ -3,12 +3,15 @@
 namespace App\Services;
 
 use App\ApiCode;
+use App\Http\Resources\Profiles\ProfilesResource;
 use App\Http\Resources\Users\UsersCollection;
 use App\Http\Resources\Users\UsersResource;
 use App\Interfaces\UserInterface;
+use App\Models\Profile;
 use App\Models\User;
 use App\Traits\UserTrait;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Log;
 
 class UserService implements UserInterface
 {
@@ -78,5 +81,41 @@ class UserService implements UserInterface
         User::findOrFail($id)->delete();
 
         return ['data' => null, 'message' => 'Deleted Successfully.', 'statusCode' => ApiCode::SUCCESS];
+    }
+
+    public function userProfile()
+    {
+        return ['data' => ProfilesResource::make(auth()->user()->profile), 'message' => 'Here is your profile info!!', 'statusCode' => ApiCode::SUCCESS];
+    }
+
+    public function updateProfile($request, $id)
+    {
+        $user = Profile::findOrFail($id);
+
+        if (isset($request->contact_number) && $request->contact_number != null)
+            $user->contact_number = $request->contact_number;
+
+        if (isset($request->address) && $request->address != null)
+            $user->address = $request->address;
+
+        // if ($request->file('image')) {
+            // Get the uploaded file
+            $image = $request->profile_image;
+            Log::alert($image);
+
+            // // Create a filename based on the user's name, sanitized and appended with the extension
+            // $userName = preg_replace('/\s+/', '_', strtolower($user->name)); // Replace spaces with underscores
+            // $filename = $userName . '.' . $image->getClientOriginalExtension();
+
+            // // Store the image in the 'uploads/profile_images' directory
+            // $imagePath = $image->storeAs('uploads/profile_images', $filename, 'public');
+
+            // // Update the user's image path in the database
+            // $user->image = $imagePath;
+        // }
+
+        $user->save();
+
+        return ['data' => ProfilesResource::make($user), 'message' => 'Updated Successfully.', 'statusCode' => ApiCode::SUCCESS];
     }
 }

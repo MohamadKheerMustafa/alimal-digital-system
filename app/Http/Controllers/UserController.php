@@ -57,4 +57,22 @@ class UserController extends AppBaseController
         $data = $this->userInterface->delete($id);
         return $this->handleResponse($data['statusCode'], $data['data'], $data['message']);
     }
+
+    /**
+     * get user profile who is authinticated.
+     */
+    public function userProfile()
+    {
+        $data = $this->userInterface->userProfile();
+        return $this->handleResponse($data['statusCode'], $data['data'], $data['message']);
+    }
+
+    /**
+     * get user profile who is authinticated.
+     */
+    public function updateProfile(Request $request, $id)
+    {
+        $data = $this->userInterface->updateProfile($request, $id);
+        return $this->handleResponse($data['statusCode'], $data['data'], $data['message']);
+    }
 }

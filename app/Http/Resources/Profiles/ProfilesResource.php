@@ -25,6 +25,7 @@ class ProfilesResource extends JsonResource
             'position' => $this->position,
             'contact_number' => $this->contact_number,
             'address' => $this->address,
+            'image' => $this->image ? asset('storage/' . $this->image) : null,
             'created_at' => $this->created_at,
             'updated_at' => $this->updated_at,
         ];

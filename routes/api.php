@@ -3,6 +3,7 @@
 use App\Http\Controllers\ArchiveController;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\CategoryController;
+use App\Http\Controllers\ChatGPTController;
 use App\Http\Controllers\UserController;
 use Illuminate\Support\Facades\Route;
 
@@ -45,10 +46,12 @@ Route::group(['middleware' => 'api'], function ($router) {
         /*------------------------------------ Start users Api's ------------------------------------*/
         Route::group(['prefix' => 'users'], function ($router) {
             Route::get('all', [UserController::class, 'index']);
-            Route::get('get/{id}', [UserController::class, 'get']);
+            Route::get('get/{id}', [UserController::class, 'show']);
             Route::post('add', [UserController::class, 'store']);
             Route::put('update/{id}', [UserController::class, 'update']);
             Route::delete('delete/{id}', [UserController::class, 'destroy']);
+            Route::get('userProfile', [UserController::class, 'userProfile']);
+            Route::put('/profile/updateProfile/{id}', [UserController::class, 'updateProfile']);
         });
         /*------------------------------------ End users Api's ------------------------------------*/
 
@@ -64,4 +67,7 @@ Route::group(['middleware' => 'api'], function ($router) {
         });
         /*------------------------------------ End Categories Api's ------------------------------------*/
     });
+
+    Route::post('/generate-text', [ChatGPTController::class, 'generateText']);
+    Route::post('/generate-image', [ChatGPTController::class, 'generateImage']);
 });

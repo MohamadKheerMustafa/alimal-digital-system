@@ -15,13 +15,18 @@ class UserObserver
      */
     public function created(User $user): void
     {
-        // $department = $user->profile()->department();
+        // $profile = $user->profile();
+        // $department = $profile->department();
+        // $permissionName = 'upload-archive-' . $user->name;
 
         // // Main Category!!
         // $parentCategory = Category::where('name', $department->name)->first();
 
-        // // Generate the permission name using the parent and subcategory names
-        // $permissionName = 'upload-archive-' . Str::slug($parentCategory->name . '-' . $department->name);
+        // $subCategoryCreation = Category::create([
+        //     'name' => $permissionName,
+        //     'parent_id' => $parentCategory->id
+        // ]);
+
 
         // // Check if the permission already exists in the database
         // if (!Permission::where('name', $permissionName)->exists()) {

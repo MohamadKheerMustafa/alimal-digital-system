@@ -16,7 +16,8 @@ class Profile extends Model
         'position',
         'department',
         'contact_number',
-        'address'
+        'address',
+        'image'
     ];
 
     public function user()
