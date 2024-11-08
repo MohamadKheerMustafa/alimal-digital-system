@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Interfaces\UserInterface;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Log;
 
 class UserController extends AppBaseController
 {
@@ -45,6 +46,9 @@ class UserController extends AppBaseController
      */
     public function update(Request $request, $id)
     {
+        $request->validate([
+            'image' => 'required|file'
+        ]);
         $data = $this->userInterface->update($request, $id);
         return $this->handleResponse($data['statusCode'], $data['data'], $data['message']);
     }

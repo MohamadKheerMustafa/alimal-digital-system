@@ -15,9 +15,12 @@ return new class extends Migration
             $table->id();
             $table->foreignId('user_id')->constrained()->onDelete('cascade');
             $table->foreignId('department_id')->nullable()->constrained()->onDelete('set null');
+            $table->boolean('is_manager')->default(false);
             $table->string('position')->nullable();
             $table->string('contact_number')->nullable();
             $table->string('address')->nullable();
+            $table->enum('gender', ['male', 'female']);
+            $table->string('image')->nullable();
             $table->timestamps();
         });
     }

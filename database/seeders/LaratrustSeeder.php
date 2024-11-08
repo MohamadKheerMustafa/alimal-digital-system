@@ -5,6 +5,7 @@ namespace Database\Seeders;
 use App\Models\HR\Department;
 use App\Models\Permission;
 use App\Models\Role;
+use App\Models\User;
 use Illuminate\Database\Seeder;
 
 class LaratrustSeeder extends Seeder
@@ -12,96 +13,91 @@ class LaratrustSeeder extends Seeder
     /**
      * Run the database seeds.
      */
-    public function run(): void
+    public function run()
     {
-        // Define general roles
-        $roles = [
-            'admin' => 'Has access to all system features and settings',
-            'manager' => 'Can manage team and department resources',
-            'employee' => 'Regular employee with limited access'
-        ];
-
-        foreach ($roles as $name => $description) {
-            Role::firstOrCreate(['name' => $name], ['display_name' => ucfirst($name), 'description' => $description]);
-        }
-
-        // Define and create general permissions
+        // Define permissions
         $permissions = [
-            ['name' => 'manage-users', 'display_name' => 'Manage Users', 'description' => 'Create, edit, and delete users'],
-            ['name' => 'view-departments', 'display_name' => 'View Departments', 'description' => 'View department data'],
-            ['name' => 'create-departments', 'display_name' => 'Create Departments', 'description' => 'Create new departments'],
-            ['name' => 'update-departments', 'display_name' => 'Update Departments', 'description' => 'Edit department information'],
-            ['name' => 'delete-departments', 'display_name' => 'Delete Departments', 'description' => 'Remove departments from system'],
-            ['name' => 'view-archives', 'display_name' => 'View Archives', 'description' => 'Access archives'],
-            ['name' => 'upload-archives', 'display_name' => 'upload Archives only admin', 'description' => 'Access archives'],
-            ['name' => 'delete-archives', 'display_name' => 'Delete Archives', 'description' => 'Delete files from archives'],
+            // User management
+            ['name' => 'create_users', 'display_name' => 'Create Users', 'description' => 'Create new users'],
+            ['name' => 'view_users', 'display_name' => 'View Users', 'description' => 'View users list'],
+            ['name' => 'update_users', 'display_name' => 'Update Users', 'description' => 'Update user information'],
+            ['name' => 'delete_users', 'display_name' => 'Delete Users', 'description' => 'Delete users'],
+
+            // Department management
+            ['name' => 'create_departments', 'display_name' => 'Create Departments', 'description' => 'Create new departments'],
+            ['name' => 'view_departments', 'display_name' => 'View Departments', 'description' => 'View departments list'],
+            ['name' => 'update_departments', 'display_name' => 'Update Departments', 'description' => 'Update department information'],
+            ['name' => 'delete_departments', 'display_name' => 'Delete Departments', 'description' => 'Delete departments'],
+
+            // Category management
+            ['name' => 'create_categories', 'display_name' => 'Create Categories', 'description' => 'Create new categories'],
+            ['name' => 'view_categories', 'display_name' => 'View Categories', 'description' => 'View categories list'],
+            ['name' => 'update_categories', 'display_name' => 'Update Categories', 'description' => 'Update category information'],
+            ['name' => 'delete_categories', 'display_name' => 'Delete Categories', 'description' => 'Delete categories'],
+
+            // Archive permissions for employees and managers
+            ['name' => 'manage_own_archive', 'display_name' => 'Manage Own Archive', 'description' => 'Upload and download files in own archive'],
+            ['name' => 'view_department_archives', 'display_name' => 'View Department Archives', 'description' => 'View all archives within the department'],
+            ['name' => 'approve_archive_requests', 'display_name' => 'Approve Archive Requests', 'description' => 'Approve or reject requests for updating or deleting archives'],
+            ['name' => 'delete_archives', 'display_name' => 'Delete Archives', 'description' => 'Delete files within department archives'],
+            ['name' => 'update_archives', 'display_name' => 'Update Archives', 'description' => 'Update files within department archives'],
+
+            // Full system access for Super Admin
+            ['name' => 'full_system_access', 'display_name' => 'Full System Access', 'description' => 'Access all parts of the system'],
         ];
 
-        // Collect all permissions
-        $allPermissions = [];
-
-        foreach ($permissions as $permData) {
-            $permission = Permission::firstOrCreate(['name' => $permData['name']], $permData);
-            $allPermissions[] = $permission->id; // Collect permission IDs
+        // Create permissions
+        foreach ($permissions as $permissionData) {
+            Permission::firstOrCreate(['name' => $permissionData['name']], $permissionData);
         }
 
-        // Retrieve departments and create department-specific roles and upload permissions
-        $departments = Department::all();
+        // Define roles with permissions
+        $roles = [
+            // Super Admin with all permissions
+            'super_admin' => Permission::pluck('name')->toArray(),
 
-        foreach ($departments as $department) {
-            $roleName = substr(str_replace(' ', '-', strtoupper($department->name)), 0, 3) . '-manager';
-            $managerRole = Role::firstOrCreate(
-                ['name' => $roleName],
-                [
-                    'display_name' => $department->name . ' Manager',
-                    'description' => 'Manages the ' . $department->name . ' department'
-                ]
-            );
+            // Department-specific roles
+            'software_development_manager' => ['view_department_archives', 'approve_archive_requests', 'delete_archives', 'update_archives'],
+            'graphic_design_manager' => ['view_department_archives', 'approve_archive_requests', 'delete_archives', 'update_archives'],
+            'marketing_manager' => ['view_department_archives', 'approve_archive_requests', 'delete_archives', 'update_archives'],
+            'e-commerce_manager' => ['view_department_archives', 'approve_archive_requests', 'delete_archives', 'update_archives'],
 
-            $permissionName = 'upload-archive-' . str_replace(' ', '-', strtolower($department->name));
-            $uploadPermission = Permission::firstOrCreate(
-                ['name' => $permissionName],
-                [
-                    'display_name' => 'Upload Archive for ' . $department->name,
-                    'description' => 'Upload files to the archive for the ' . $department->name . ' department'
-                ]
-            );
+            // Employee roles
+            'software_development_employee' => ['manage_own_archive'],
+            'graphic_design_employee' => ['manage_own_archive'],
+            'marketing_employee' => ['manage_own_archive'],
+            'e-commerce_employee' => ['manage_own_archive'],
+        ];
 
-            $managerRole->permissions()->attach($uploadPermission);
-            $allPermissions[] = $uploadPermission->id; // Collect department-specific permission IDs
+        // Create roles and attach permissions
+        foreach ($roles as $roleName => $rolePermissions) {
+            $role = Role::firstOrCreate(['name' => $roleName]);
+            foreach ($rolePermissions as $permissionName) {
+                $permission = Permission::where('name', $permissionName)->first();
+                $role->givePermission($permission);
+            }
         }
 
-        // Assign all collected permissions to the admin role
-        $admin = Role::where('name', 'admin')->first();
-        $admin->permissions()->sync($allPermissions);
+        // Create a Super Admin user and assign the super_admin role
+        $superAdminUser = User::firstOrCreate(
+            ['email' => 'admin@example.com'],
+            [
+                'name' => 'Super Admin',
+                'password' => bcrypt('password'), // Change 'password' to a secure password
+            ]
+        );
 
-        // Assign relevant permissions to general manager and employee roles
-        $generalManagerPermissions = Permission::whereIn('name', [
-            'view-departments',
-            'update-departments',
-            'view-archives',
-        ])->get();
+        $superAdminUser->profile()->create([
+            'department_id' => null,
+            'is_manager' => true,
+            'position' => 'Super Admin',
+            'contact_number' => '+963931443885',
+            'address' => 'Damascus',
+            'image' => '/uploads/profile_images/super-admin.jpeg'
+        ]);
 
-        $departmentUploadPermissions = Permission::where('name', 'like', 'upload-archive-%')->get();
-        $generalManagerPermissions = $generalManagerPermissions->merge($departmentUploadPermissions);
-        $manager = Role::where('name', 'manager')->first();
-        $manager->permissions()->sync($generalManagerPermissions);
-
-        $employeePermissions = Permission::whereIn('name', ['view-departments', 'view-archives'])->get();
-        $employee = Role::where('name', 'employee')->first();
-        $employee->permissions()->sync($employeePermissions);
-
-        // Assign permissions to department-specific manager roles
-        foreach ($departments as $department) {
-            $roleName = substr(str_replace(' ', '-', strtoupper($department->name)), 0, 3) . '-manager';
-            $departmentManagerRole = Role::where('name', $roleName)->first();
-
-            $permissionsForRole = $generalManagerPermissions->filter(function ($permission) use ($department) {
-                return str_contains($permission->name, 'upload-archive-' . str_replace(' ', '-', strtolower($department->name))) ||
-                    in_array($permission->name, ['view-departments', 'view-archives']);
-            });
-
-            $departmentManagerRole->permissions()->sync($permissionsForRole);
+        if ($superAdminUser) {
+            $superAdminUser->addRole('super_admin'); // Assign Super Admin role to user
         }
     }
 }

@@ -5,7 +5,6 @@ namespace App\Http\Controllers;
 use App\ApiCode;
 use App\Http\Resources\Users\UsersResource;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Log;
 use Tymon\JWTAuth\Facades\JWTAuth;
 
 class AuthController extends AppBaseController
@@ -36,7 +35,6 @@ class AuthController extends AppBaseController
         $user = auth()->user();
         $user->token = $token;
 
-        Log::alert($request);
         $data = ['data' => UsersResource::make($user), 'message' => 'Logged in successfully', 'statusCode' => ApiCode::SUCCESS];
         return $this->handleResponse($data['statusCode'], $data['data'], $data['message']);
     }
@@ -51,6 +49,21 @@ class AuthController extends AppBaseController
         auth()->logout();
 
         return $this->handleResponse(ApiCode::SUCCESS, null, 'Successfully logged out');
+    }
+
+    /**
+     * Log the user out (Invalidate the token).
+     *
+     * @return \Illuminate\Http\JsonResponse
+     */
+    public function validateToken()
+    {
+        $user = auth()->user();
+
+        if (!$user)
+            return $this->handleResponse(ApiCode::UNAUTHORIZED, null, 'Unauthenticated');
+
+        return $this->handleResponse(ApiCode::SUCCESS, UsersResource::make($user), 'Token Still Active.');
     }
 
     /**

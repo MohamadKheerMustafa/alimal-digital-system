@@ -12,6 +12,7 @@ use App\Models\User;
 use App\Traits\UserTrait;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Storage;
 
 class UserService implements UserInterface
 {
@@ -24,7 +25,7 @@ class UserService implements UserInterface
         $search = $request->query('search', null);
 
         $users = User::query()->when($search, fn($query) => $query->where('name', 'LIKE', "%$search%"))
-            ->latest()
+            ->latest('id')
             ->paginate($limit, ['*'], 'page', $page);
 
         return ['data' => new UsersCollection($users), 'message' => 'Here are all users.', 'statusCode' => ApiCode::SUCCESS];
@@ -46,13 +47,21 @@ class UserService implements UserInterface
         ]);
 
         if ($user) {
-            $this->createProfile([
+            $profileData = [
                 'user_id' => $user->id,
                 'department_id' => $request->department_id,
                 'position' => $request->position,
                 'contact_number' => $request->contact_number,
-                'address' => $request->address
-            ]);
+                'address' => $request->address,
+            ];
+
+            // Handle image upload
+            if ($request->hasFile('image')) {
+                $imagePath = $request->file('image')->store('/uploads/profile_images', 'public');
+                $profileData['image'] = $imagePath;  // Save path to the profile data
+            }
+
+            $this->createProfile($profileData);
         }
 
         return ['data' => UsersResource::make($user), 'message' => 'Created Successfully.', 'statusCode' => ApiCode::CREATED];
@@ -61,19 +70,51 @@ class UserService implements UserInterface
     public function update($request, $id)
     {
         $user = User::findOrFail($id);
+        $profile = $user->profile;
 
-        if (isset($request->name) && $request->name != null)
+        // Update basic user fields
+        if (isset($request->name) && $request->name != null) {
             $user->name = $request->name;
+        }
 
-        if (isset($request->email) && $request->email != null)
+        if (isset($request->email) && $request->email != null) {
             $user->email = $request->email;
+        }
 
-        if (isset($request->password) && $request->password != null)
+        if (isset($request->password) && $request->password != null) {
             $user->password = Hash::make($request->password);
+        }
 
+        // Update profile fields
+        if (isset($request->contact_number) && $request->contact_number != null) {
+            $profile->contact_number = $request->contact_number;
+        }
+
+        if (isset($request->address) && $request->address != null) {
+            $profile->address = $request->address;
+        }
+
+        // Check if image file is present in the request
+        if ($request->hasFile('image')) {
+            // Delete the old image if it exists and does not contain "avatars" in the path
+            if ($profile->image && !str_contains($profile->image, 'avatars')) {
+                Storage::disk('public')->delete($profile->image);
+            }
+
+            // Store the new image
+            $path = $request->file('image')->store('uploads/profile_images', 'public');
+            $profile->image = $path;
+        }
+
+        // Save user and profile changes
         $user->save();
+        $profile->save();
 
-        return ['data' => UsersResource::make($user), 'message' => 'Updated Successfully.', 'statusCode' => ApiCode::SUCCESS];
+        return [
+            'data' => UsersResource::make($user),
+            'message' => 'Updated Successfully.',
+            'statusCode' => ApiCode::SUCCESS
+        ];
     }
 
     public function delete($id)
@@ -99,19 +140,18 @@ class UserService implements UserInterface
             $user->address = $request->address;
 
         // if ($request->file('image')) {
-            // Get the uploaded file
-            $image = $request->profile_image;
-            Log::alert($image);
+        // Get the uploaded file
+        $image = $request->profile_image;
 
-            // // Create a filename based on the user's name, sanitized and appended with the extension
-            // $userName = preg_replace('/\s+/', '_', strtolower($user->name)); // Replace spaces with underscores
-            // $filename = $userName . '.' . $image->getClientOriginalExtension();
+        // // Create a filename based on the user's name, sanitized and appended with the extension
+        // $userName = preg_replace('/\s+/', '_', strtolower($user->name)); // Replace spaces with underscores
+        // $filename = $userName . '.' . $image->getClientOriginalExtension();
 
-            // // Store the image in the 'uploads/profile_images' directory
-            // $imagePath = $image->storeAs('uploads/profile_images', $filename, 'public');
+        // // Store the image in the 'uploads/profile_images' directory
+        // $imagePath = $image->storeAs('uploads/profile_images', $filename, 'public');
 
-            // // Update the user's image path in the database
-            // $user->image = $imagePath;
+        // // Update the user's image path in the database
+        // $user->image = $imagePath;
         // }
 
         $user->save();

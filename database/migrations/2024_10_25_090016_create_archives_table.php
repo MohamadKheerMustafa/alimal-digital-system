@@ -19,6 +19,8 @@ return new class extends Migration
             $table->string('file_path');
             $table->string('file_type');
             $table->unsignedBigInteger('file_size');
+            $table->boolean('is_update_requested')->default(false);
+            $table->boolean('is_delete_requested')->default(false);
             $table->timestamps();
         });
     }

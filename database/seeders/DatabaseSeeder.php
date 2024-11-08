@@ -13,10 +13,8 @@ class DatabaseSeeder extends Seeder
     {
         $this->call([
             LaratrustSeeder::class,
-            CategoryPermissionsSeeder::class,
             CategorySeeder::class,
             DepartmentSeeder::class,
-            AdminSeeder::class,
             UserSeeder::class,
         ]);
     }

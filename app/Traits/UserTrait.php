@@ -15,7 +15,8 @@ trait UserTrait
             'department_id' => $data['department_id'],
             'position' => $data['position'],
             'contact_number' => $data['contact_number'],
-            'address' => $data['address']
+            'address' => $data['address'],
+            'image' => $data['image']
         ]);
         return true;
     }

@@ -4,6 +4,7 @@ namespace App\Observers;
 
 use App\Models\Archive\Category;
 use App\Models\Permission;
+use App\Models\Profile;
 use App\Models\User;
 use App\Traits\UserTrait;
 use Illuminate\Support\Str;

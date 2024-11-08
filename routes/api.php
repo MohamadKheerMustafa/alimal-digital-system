@@ -4,6 +4,7 @@ use App\Http\Controllers\ArchiveController;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\CategoryController;
 use App\Http\Controllers\ChatGPTController;
+use App\Http\Controllers\DepartmentController;
 use App\Http\Controllers\UserController;
 use Illuminate\Support\Facades\Route;
 
@@ -27,11 +28,19 @@ Route::group(['middleware' => 'api'], function ($router) {
             Route::post('login', [AuthController::class, 'login']);
             Route::post('logout', [AuthController::class, 'logout']);
             Route::post('refresh', [AuthController::class, 'refresh']);
-            Route::get('me', function () {
-                return auth()->user();
-            });
+            Route::get('validate-token', [AuthController::class, 'validateToken']);
         });
         /*------------------------------------ End Auth Api's ------------------------------------*/
+
+        /*------------------------------------ Start Archives Api's ------------------------------------*/
+        Route::group(['prefix' => 'departments'], function ($router) {
+            Route::get('all', [DepartmentController::class, 'index']);
+            Route::get('get/{id}', [DepartmentController::class, 'get']);
+            Route::post('store', [DepartmentController::class, 'upload']);
+            Route::get('update/{id}', [DepartmentController::class, 'download']);
+            Route::delete('delete/{id}', [DepartmentController::class, 'destroy']);
+        });
+        /*------------------------------------ End Archives Api's ------------------------------------*/
 
         /*------------------------------------ Start Archives Api's ------------------------------------*/
         Route::group(['prefix' => 'archives'], function ($router) {
