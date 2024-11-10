@@ -13,10 +13,10 @@ class CategoryController extends AppBaseController
     {
         $this->middleware('auth:api');
         $this->categoryInterface = $categoryInterface;
-        $this->middleware('permission:view-category', ['only' => ['index', 'show', 'getArchivesBasedOnCategory']]);
-        $this->middleware('permission:add-category', ['only' => ['store']]);
-        $this->middleware('permission:update-category', ['only' => ['update']]);
-        $this->middleware('permission:delete-category', ['only' => ['destroy']]);
+        $this->middleware('permission:view_categories', ['only' => ['index', 'show', 'getArchivesBasedOnCategory']]);
+        $this->middleware('permission:create_categories', ['only' => ['store']]);
+        $this->middleware('permission:update_categories', ['only' => ['update']]);
+        $this->middleware('permission:delete_categories', ['only' => ['destroy']]);
     }
     /**
      * Display a listing of the resource.
