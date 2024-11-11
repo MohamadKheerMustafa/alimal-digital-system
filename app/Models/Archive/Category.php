@@ -24,6 +24,17 @@ class Category extends Model
         return strtolower(str_replace(' ', '_', $this->name));
     }
 
+    /**
+     * Get the name of the parent category.
+     *
+     * @return string|null
+     */
+    public function getParentNameAttribute()
+    {
+        // Access the parent category and return its name if it exists
+        return isset($this->subCategory) ? $this->subCategory->name : null;
+    }
+
     public function archives()
     {
         return $this->hasMany(Archive::class);
