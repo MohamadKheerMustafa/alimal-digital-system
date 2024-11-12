@@ -66,98 +66,37 @@ class ArchiveService implements ArchiveInterface
         $user = auth()->user();
         $isAdmin = $request->input('isAdmin', false);
         $section = $request->input('section');
-        $uploadToGeneral = $request->input('uploadToGeneral', false); // New attribute
+        $uploadToGeneral = $request->input('uploadToGeneral', false);
 
-        // If the user wants to upload to the "General" section
+        // Upload to "General" section
         if ($uploadToGeneral) {
             $generalCategory = Category::where('name', 'General')->first();
             if (!$generalCategory) {
-                return [
-                    'data' => null,
-                    'message' => 'General category not found',
-                    'statusCode' => ApiCode::NOT_FOUND
-                ];
+                return $this->errorResponse('General category not found');
             }
-            $this->uploadFiles($request, $user, $generalCategory);
-            return [
-                'data' => null,
-                'message' => 'Files are being uploaded under the General category',
-                'statusCode' => ApiCode::SUCCESS
-            ];
+            return $this->uploadFiles($request, $user, $generalCategory, 'Files are being uploaded under the General category');
         }
 
         // Admin upload logic
-        if ($isAdmin && $user->isAbleTo('upload-archives')) {
+        if ($isAdmin && $user->isAbleTo('full_system_access')) {
             $category = Category::where('name', $section)->first();
             if (!$category) {
-                return [
-                    'data' => null,
-                    'message' => 'Specified section not found',
-                    'statusCode' => ApiCode::NOT_FOUND
-                ];
+                return $this->errorResponse('Specified section not found');
             }
-            $this->uploadFiles($request, $user, $category);
-            return [
-                'data' => null,
-                'message' => 'Files are being uploaded to the specified section',
-                'statusCode' => ApiCode::SUCCESS
-            ];
+            return $this->uploadFiles($request, $user, $category, 'Files are being uploaded to ' . $section);
         }
 
-        // Department-based logic for regular users
-        $department = Department::findOrFail($user->profile->department_id);
-        $category = Category::where('name', $department->name)->first();
-
-        if (!$category) {
-            return [
-                'data' => null,
-                'message' => 'Category not found',
-                'statusCode' => ApiCode::NOT_FOUND
-            ];
+        // Employee upload logic for own archive only
+        $category = Category::findOrFail($user->profile->category_id);
+        if (!$category || !$user->isAbleTo('manage_own_archive')) {
+            return $this->errorResponse('You do not have permission to upload files in this section');
         }
 
-        $permissionMap = [
-            'Graphic Design' => 'upload-archive-graphic-design',
-            'Software Development' => 'upload-archive-software-development',
-            'Marketing' => 'upload-archive-marketing',
-            'E-commerce' => 'upload-archive-e-commerce',
-        ];
-
-        if (isset($permissionMap[$department->name])) {
-            $permission = $permissionMap[$department->name];
-            if ($user->isAbleTo($permission)) {
-                $this->uploadFiles($request, $user, $category);
-                return [
-                    'data' => null,
-                    'message' => 'Files are being uploaded',
-                    'statusCode' => ApiCode::SUCCESS
-                ];
-            } else {
-                return [
-                    'data' => null,
-                    'message' => 'You do not have permission to upload files in this section',
-                    'statusCode' => ApiCode::FORBIDDEN
-                ];
-            }
-        } else {
-            $generalCategory = Category::where('name', 'General')->first();
-            if (!$generalCategory) {
-                return [
-                    'data' => null,
-                    'message' => 'General category not found',
-                    'statusCode' => ApiCode::NOT_FOUND
-                ];
-            }
-            $this->uploadFiles($request, $user, $generalCategory);
-            return [
-                'data' => null,
-                'message' => 'Files are being uploaded under the General category',
-                'statusCode' => ApiCode::SUCCESS
-            ];
-        }
+        return $this->uploadFiles($request, $user, $category, 'Files are being uploaded');
     }
 
-    private function uploadFiles($request, $user, $category)
+    // Helper function to handle file upload response
+    private function uploadFiles($request, $user, $category, $successMessage)
     {
         $files = $request->file('files');
         if (!$files || !is_array($files)) {
@@ -172,8 +111,25 @@ class ArchiveService implements ArchiveInterface
 
             FileUploadJob::dispatch($tempPath, $user, $category, $request->except('files'), $uploadPath);
         }
+
+        return [
+            'data' => null,
+            'message' => $successMessage,
+            'statusCode' => ApiCode::SUCCESS
+        ];
     }
 
+    // Helper function for error responses
+    private function errorResponse($message)
+    {
+        return [
+            'data' => null,
+            'message' => $message,
+            'statusCode' => ApiCode::FORBIDDEN
+        ];
+    }
+
+    // Build the upload path based on category structure
     private function buildUploadPath($category)
     {
         $path = "uploads/{$category->shortcut}";

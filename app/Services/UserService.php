@@ -7,6 +7,7 @@ use App\Http\Resources\Profiles\ProfilesResource;
 use App\Http\Resources\Users\UsersCollection;
 use App\Http\Resources\Users\UsersResource;
 use App\Interfaces\UserInterface;
+use App\Models\HR\Department;
 use App\Models\Profile;
 use App\Models\User;
 use App\Traits\UserTrait;
@@ -46,13 +47,25 @@ class UserService implements UserInterface
             'password' => Hash::make($request->password)
         ]);
 
+        $department = Department::findOrFail($request->department_id);
+        $mainCategory = $department->category()->where('parent_id', '!=', null)->first();
+
         if ($user) {
+            $categoryData = [
+                'name' => strtolower(str_replace(' ', '_', $user->name)),
+                'parent_id' => $mainCategory->id ?? null,
+                'department_id' => $department->id
+            ];
+            $category = $this->createCategory($categoryData);
+
+
             $profileData = [
                 'user_id' => $user->id,
-                'department_id' => $request->department_id,
+                'department_id' => $department->id,
                 'position' => $request->position,
                 'contact_number' => $request->contact_number,
                 'address' => $request->address,
+                'category_id' => $category->id
             ];
 
             // Handle image upload
@@ -62,6 +75,8 @@ class UserService implements UserInterface
             }
 
             $this->createProfile($profileData);
+
+            $user->addRole($request->role);
         }
 
         return ['data' => UsersResource::make($user), 'message' => 'Created Successfully.', 'statusCode' => ApiCode::CREATED];

@@ -16,7 +16,9 @@ class Archive extends Model
         'file_name',
         'file_path',
         'file_type',
-        'file_size'
+        'file_size',
+        'is_update_requested',
+        'is_delete_requested'
     ];
 
     public function category()

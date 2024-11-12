@@ -2,6 +2,7 @@
 
 namespace App\Traits;
 
+use App\Models\Archive\Category;
 use App\Models\Profile;
 
 trait UserTrait
@@ -19,5 +20,15 @@ trait UserTrait
             'image' => $data['image']
         ]);
         return true;
+    }
+
+    public function createCategory($data)
+    {
+        $category = Category::create([
+            'name' => $data['name'],
+            'parent_id' => $data['parent_id'],
+            'department_id' => $data['department_id']
+        ]);
+        return $category;
     }
 }

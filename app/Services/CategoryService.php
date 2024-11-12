@@ -17,12 +17,51 @@ class CategoryService implements CategoryInterface
         $limit = $request->query('limit', 12);
         $page = $request->query('page', 1);
         $search = $request->query('search', null);
+        $mainCategory = $request->query('mainCategory', false);
+        $categoriesGrouped = $request->query('categoriesGrouped', false);
 
-        $categories = Category::query()->when($search, fn($query) => $query->where('name', 'LIKE', "%$search%"))
+        // If grouped categories are requested
+        if ($categoriesGrouped) {
+            // Only fetch necessary fields and use eager loading for parent-child relationships
+            $categories = Category::with('children:id,name,parent_id')
+                ->select('id', 'name', 'parent_id')
+                ->where('parent_id', null)
+                ->when($search, fn($query) => $query->where('name', 'LIKE', "%$search%"))
+                ->get()
+                ->groupBy('parent_id')
+                ->map(function ($items, $parentId) {
+                    return [
+                        'categories' => $items->map(fn($item) => [
+                            'id' => $item->id,
+                            'name' => $item->name,
+                            'children' => $item->children->map(fn($child) => [
+                                'id' => $child->id,
+                                'name' => $child->name,
+                            ]),
+                        ]),
+                    ];
+                })
+                ->values();
+
+            return [
+                'data' => $categories,
+                'message' => 'Here are all categories grouped by parent ID.',
+                'statusCode' => ApiCode::SUCCESS,
+            ];
+        }
+
+        // Standard paginated response for categories if not grouping
+        $categories = Category::query()
+            ->when($mainCategory, fn($query) => $query->where('parent_id', null))
+            ->when($search, fn($query) => $query->where('name', 'LIKE', "%$search%"))
             ->latest()
             ->paginate($limit, ['*'], 'page', $page);
 
-        return ['data' => new CategoryCollection($categories), 'message' => 'Here are all categories.', 'statusCode' => ApiCode::SUCCESS];
+        return [
+            'data' => new CategoryCollection($categories),
+            'message' => 'Here are all categories.',
+            'statusCode' => ApiCode::SUCCESS,
+        ];
     }
 
     public function get($id)
@@ -36,7 +75,8 @@ class CategoryService implements CategoryInterface
     {
         $category = Category::create([
             'name' => $request->name,
-            'parent_id' => isset($request->parent_id) ? $request->parent_id : null
+            'parent_id' => isset($request->parent_id) ? $request->parent_id : null,
+            'department_id' => $request->department_id
         ]);
 
         return ['data' => CategoryResource::make($category), 'message' => 'Created Successfully.', 'statusCode' => ApiCode::CREATED];

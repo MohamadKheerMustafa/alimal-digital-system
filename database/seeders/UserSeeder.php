@@ -2,6 +2,7 @@
 
 namespace Database\Seeders;
 
+use App\Models\Archive\Category;
 use App\Models\HR\Department;
 use App\Models\Profile;
 use App\Models\Role;
@@ -49,7 +50,6 @@ class UserSeeder extends Seeder
         ];
 
         foreach ($departments as $department) {
-            // Check if manager data exists for the department
             if (!isset($managerNames[$department->name])) {
                 Log::error("Manager data not found for department: " . $department->name);
                 continue;
@@ -57,6 +57,21 @@ class UserSeeder extends Seeder
 
             $managerData = $managerNames[$department->name];
             $managerAvatarPath = $this->getRandomAvatarPath($managerData['gender']);
+
+            // Retrieve or create the main category for the department
+            $category = Category::where('name', $department->name)->first();
+            if (!$category) {
+                Log::error("Category not found for department: " . $department->name);
+                continue;
+            }
+
+            // Create or find subcategory for the manager
+            $managerSubcategoryName = ucwords($managerData['name']); // Capitalize each word
+            $managerSubcategory = Category::firstOrCreate([
+                'name' => $managerSubcategoryName,
+                'parent_id' => $category->id, // Associate with main category
+                'department_id' => $department->id
+            ]);
 
             // Create the manager
             $manager = User::create([
@@ -77,6 +92,7 @@ class UserSeeder extends Seeder
             Profile::create([
                 'user_id' => $manager->id,
                 'department_id' => $department->id,
+                'category_id' => $managerSubcategory->id, // Assign manager's subcategory ID
                 'is_manager' => true,
                 'position' => $department->name . ' Manager',
                 'gender' => $managerData['gender'],
@@ -104,9 +120,18 @@ class UserSeeder extends Seeder
                         continue;
                     }
 
+                    // Create or find subcategory for the employee
+                    $employeeSubcategoryName = ucwords($employeeData['name']); // Capitalize each word
+                    $employeeSubcategory = Category::firstOrCreate([
+                        'name' => $employeeSubcategoryName,
+                        'parent_id' => $category->id, // Associate with main category
+                        'department_id' => $department->id
+                    ]);
+
                     Profile::create([
                         'user_id' => $employee->id,
                         'department_id' => $department->id,
+                        'category_id' => $employeeSubcategory->id, // Assign employee's subcategory ID
                         'position' => $department->name . ' Employee',
                         'is_manager' => false,
                         'gender' => $employeeData['gender'],
