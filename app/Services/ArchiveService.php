@@ -9,9 +9,6 @@ use App\Interfaces\ArchiveInterface;
 use App\Jobs\Archives\FileUploadJob;
 use App\Models\Archive\Archive;
 use App\Models\Archive\Category;
-use App\Models\HR\Department;
-use Illuminate\Support\Facades\Log;
-use Illuminate\Support\Facades\Storage;
 
 class ArchiveService implements ArchiveInterface
 {

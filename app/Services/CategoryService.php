@@ -113,16 +113,27 @@ class CategoryService implements CategoryInterface
         $page = $request->query('page', 1);
         $search = $request->query('search', null);
 
+        // Fetch the category and ensure it exists
         $category = Category::findOrFail($category_id);
 
-        $archives = $category->archives()->when(
-            $search,
-            fn($query) => $query->where('file_name', 'Like', "% $search %")
-                ->orWhere('file_path', 'Like', "%$search%")
-        )->latest();
+        // Query archives for this category only
+        $archives = $category->archives()
+            ->when($search, function ($query) use ($search) {
+                $query->where(function ($subQuery) use ($search) {
+                    // Apply search filter strictly within the user's records
+                    $subQuery->where('file_name', 'LIKE', "%$search%")
+                        ->orWhere('file_path', 'LIKE', "%$search%");
+                });
+            })
+            ->latest();
 
+        // Paginate results
         $data = $archives->paginate($limit, ['*'], 'page', $page);
 
-        return ['data' => new ArchivesCollection($data), 'message' => 'Here are all archives for this category!.', 'statusCode' => ApiCode::SUCCESS];
+        return [
+            'data' => new ArchivesCollection($data),
+            'message' => 'Here are all archives for this category!',
+            'statusCode' => ApiCode::SUCCESS
+        ];
     }
 }
