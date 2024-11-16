@@ -14,6 +14,7 @@ class CategoryService implements CategoryInterface
 {
     public function all($request)
     {
+        $user = auth()->user();
         $limit = $request->query('limit', 12);
         $page = $request->query('page', 1);
         $search = $request->query('search', null);
@@ -23,8 +24,8 @@ class CategoryService implements CategoryInterface
         // If grouped categories are requested
         if ($categoriesGrouped) {
             // Only fetch necessary fields and use eager loading for parent-child relationships
-            $categories = Category::with('children:id,name,parent_id')
-                ->select('id', 'name', 'parent_id')
+            $categories = Category::with('children:id,name,parent_id,department_id,owner_id')
+                ->select('id', 'name', 'parent_id', 'department_id', 'owner_id')
                 ->where('parent_id', null)
                 ->when($search, fn($query) => $query->where('name', 'LIKE', "%$search%"))
                 ->get()
@@ -37,6 +38,8 @@ class CategoryService implements CategoryInterface
                             'children' => $item->children->map(fn($child) => [
                                 'id' => $child->id,
                                 'name' => $child->name,
+                                'department_id' => $child->department_id,
+                                'owner_id' => $child->owner_id
                             ]),
                         ]),
                     ];

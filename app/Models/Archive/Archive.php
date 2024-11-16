@@ -30,4 +30,15 @@ class Archive extends Model
     {
         return $this->belongsTo(Profile::class);
     }
+
+    /**
+     * Define the approvmentRequests relationship in the Archive model.
+     */
+    public function approvmentRequests()
+    {
+        return $this->belongsToMany(Profile::class, 'approval_requests', 'archive_id', 'profile_id')
+            ->withPivot(['request_type', 'status'])
+            ->withTimestamps()
+            ->using(ApprovalRequests::class);
+    }
 }

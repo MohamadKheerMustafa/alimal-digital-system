@@ -10,6 +10,7 @@ use App\Jobs\Archives\FileUploadJob;
 use App\Models\Archive\Archive;
 use App\Models\Archive\Category;
 use App\Models\HR\Department;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
 
 class ArchiveService implements ArchiveInterface
@@ -52,9 +53,9 @@ class ArchiveService implements ArchiveInterface
     {
         $archive = Archive::findOrFail($id);
 
-        if (Storage::exists($archive->file_path)) {
-            Storage::delete($archive->file_path);
-        }
+        // if (Storage::exists($archive->file_path)) {
+        //     Storage::delete($archive->file_path);
+        // }
 
         $archive->delete();
 
@@ -95,27 +96,128 @@ class ArchiveService implements ArchiveInterface
         return $this->uploadFiles($request, $user, $category, 'Files are being uploaded');
     }
 
+    public function getAllRequests($request)
+    {
+        $user = auth()->user();
+
+        // Check if the user is a manager
+        if (!$user->profile->is_manager) {
+            return [
+                'data' => null,
+                'message' => 'You do not have permission to access data in this section.',
+                'statusCode' => ApiCode::FORBIDDEN
+            ];
+        }
+
+        // Extract query parameters with defaults
+        $limit = $request->query('limit', 12);
+        $page = $request->query('page', 1);
+        $search = $request->query('search', null);
+
+        // Get category IDs for the user's department
+        $categoryIds = Category::where('department_id', $user->profile->department_id)
+            ->pluck('id')
+            ->toArray();
+
+        // Query approvmentRequests through the Archive model
+        $approvalRequestsQuery = Archive::query()
+            ->whereIn('category_id', $categoryIds)
+            ->whereHas('approvmentRequests') // Only include archives with approvmentRequests
+            ->with(['approvmentRequests' => function ($query) {
+                $query->select(['*']); // Add more fields as needed
+            }]);
+
+        // Apply search filter to the file_name column
+        if ($search) {
+            $approvalRequestsQuery->where('file_name', 'LIKE', "%{$search}%");
+        }
+
+        // Paginate results
+        $paginatedResults = $approvalRequestsQuery->paginate($limit, ['*'], 'page', $page);
+
+        return [
+            'data' => $paginatedResults,
+            'message' => 'Here are all requests for the logged-in user.',
+            'statusCode' => ApiCode::SUCCESS
+        ];
+    }
+
+    public function handleStatusChanges($request) {}
+
+    public function askToUpdate($request)
+    {
+        $user = auth()->user();
+        $archive = Archive::findOrFail($request->archive_id);
+
+        $archive->approvmentRequests()->attach($user->profile->id, [
+            'request_type' => 'update',
+            'status' => 'pending'
+        ]);
+
+        return ['data' => null, 'message' => 'Your request for updating archive has been added successfully, wait for your manager to approve', 'statusCode' => ApiCode::SUCCESS];
+    }
+
+    public function askToDelete($request)
+    {
+        $user = auth()->user();
+        $archive = Archive::findOrFail($request->archive_id);
+
+        $archive->approvmentRequests()->attach($user->profile->id, [
+            'request_type' => 'delete',
+            'status' => 'pending'
+        ]);
+
+        return ['data' => null, 'message' => 'Your request for deleting archive has been added successfully, wait for your manager to approve', 'statusCode' => ApiCode::SUCCESS];
+    }
+
     // Helper function to handle file upload response
     private function uploadFiles($request, $user, $category, $successMessage)
     {
         $files = $request->file('files');
+
+        // Ensure files are provided
         if (!$files || !is_array($files)) {
-            throw new \Exception('No files provided or invalid format');
+            return $this->errorResponse('No files provided.');
         }
 
         foreach ($files as $file) {
+            // Extract file details
+            $fileDetails = $this->getFileDetails($file);
+
+            // Store the file temporarily
             $tempPath = $file->store('temp');
 
-            // Handle subcategory structure
+            // Build the upload path
             $uploadPath = $this->buildUploadPath($category);
 
-            FileUploadJob::dispatch($tempPath, $user, $category, $request->except('files'), $uploadPath);
+            // Dispatch the job with the necessary file details
+            FileUploadJob::dispatch(
+                $tempPath,
+                $user,
+                $category,
+                [
+                    'file_size' => $fileDetails['size'], // File size
+                    'file_extension' => $fileDetails['extension'], // File extension
+                ],
+                $uploadPath,
+                $fileDetails['original_name']
+            );
         }
 
         return [
             'data' => null,
             'message' => $successMessage,
-            'statusCode' => ApiCode::SUCCESS
+            'statusCode' => ApiCode::SUCCESS,
+        ];
+    }
+
+    // Helper function to extract file details
+    private function getFileDetails($file)
+    {
+        return [
+            'original_name' => $file->getClientOriginalName(), // Original file name
+            'size' => $file->getSize(), // File size in bytes
+            'extension' => $file->getClientOriginalExtension(), // File extension
         ];
     }
 
@@ -125,7 +227,7 @@ class ArchiveService implements ArchiveInterface
         return [
             'data' => null,
             'message' => $message,
-            'statusCode' => ApiCode::FORBIDDEN
+            'statusCode' => ApiCode::FORBIDDEN,
         ];
     }
 

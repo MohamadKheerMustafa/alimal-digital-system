@@ -12,7 +12,7 @@ class Category extends Model
 
     protected $table = 'categories';
 
-    protected $fillable = ['name', 'parent_id', 'department_id'];
+    protected $fillable = ['name', 'parent_id', 'department_id' , 'owner_id'];
 
     /**
      * Get the shortcut for the category name.

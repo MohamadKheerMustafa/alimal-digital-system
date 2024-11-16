@@ -57,4 +57,28 @@ class ArchiveController extends AppBaseController
         $data = $this->archiveInterface->delete($id);
         return $this->handleResponse($data['statusCode'], $data['data'], $data['message']);
     }
+
+    public function getAllRequests(Request $request)
+    {
+        $data = $this->archiveInterface->getAllRequests($request);
+        return $this->handleResponse($data['statusCode'], $data['data'], $data['message']);
+    }
+
+    public function askToUpdate(Request $request)
+    {
+        $data = $this->archiveInterface->askToUpdate($request);
+        return $this->handleResponse($data['statusCode'], $data['data'], $data['message']);
+    }
+
+    public function askToDelete(Request $request)
+    {
+        $data = $this->archiveInterface->askToDelete($request);
+        return $this->handleResponse($data['statusCode'], $data['data'], $data['message']);
+    }
+
+    public function handleStatusChanges(Request $request)
+    {
+        $data = $this->archiveInterface->handleStatusChanges($request);
+        return $this->handleResponse($data['statusCode'], $data['data'], $data['message']);
+    }
 }

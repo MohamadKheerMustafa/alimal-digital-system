@@ -6,6 +6,7 @@ use App\Http\Controllers\CategoryController;
 use App\Http\Controllers\ChatGPTController;
 use App\Http\Controllers\DepartmentController;
 use App\Http\Controllers\UserController;
+use App\Models\Role;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -29,6 +30,12 @@ Route::group(['middleware' => 'api'], function ($router) {
             Route::post('logout', [AuthController::class, 'logout']);
             Route::post('refresh', [AuthController::class, 'refresh']);
             Route::get('validate-token', [AuthController::class, 'validateToken']);
+
+            Route::group(['prefix' => 'roles'], function ($router) {
+                Route::get('all', function () {
+                    return Role::pluck('name');
+                });
+            });
         });
         /*------------------------------------ End Auth Api's ------------------------------------*/
 
@@ -49,6 +56,13 @@ Route::group(['middleware' => 'api'], function ($router) {
             Route::post('upload', [ArchiveController::class, 'upload']);
             Route::get('download', [ArchiveController::class, 'download']);
             Route::delete('delete/{id}', [ArchiveController::class, 'destroy']);
+
+            Route::group(['prefix' => 'request'], function ($router) {
+                Route::get('allRequests', [ArchiveController::class, 'getAllRequests']);
+                Route::post('askToUpdate', [ArchiveController::class, 'askToUpdate']);
+                Route::post('askToDelete', [ArchiveController::class, 'askToDelete']);
+                Route::post('changeStatusForArchiveRequest', [ArchiveController::class, 'handleStatusChanges']);
+            });
         });
         /*------------------------------------ End Archives Api's ------------------------------------*/
 

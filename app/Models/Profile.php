@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Models\Archive\ApprovalRequests;
 use App\Models\Archive\Archive;
 use App\Models\HR\Department;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -33,5 +34,13 @@ class Profile extends Model
     public function archives()
     {
         return $this->hasMany(Archive::class);
+    }
+
+    public function approvmentRequests()
+    {
+        return $this->belongsToMany(Archive::class, 'approval_requests', 'archive_id', 'profile_id')
+            ->withPivot(['request_type', 'status'])
+            ->withTimestamps()
+            ->using(ApprovalRequests::class);
     }
 }

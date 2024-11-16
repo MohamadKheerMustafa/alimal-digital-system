@@ -18,8 +18,10 @@ class CategoryResource extends JsonResource
             'id' => $this->id,
             'name' => $this->name,
             'parent_id' => $this->parent_id,
-            'created_at' => $this->created_at,
-            'updated_at' => $this->updated_at,
+            'department_id' => $this->department_id,
+            'owner_id' => $this->owner_id,
+            'created_at' => $this->created_at->diffForHumans(),
+            'updated_at' => $this->updated_at->diffForHumans(),
             'parent_name' => $this->parent_name,
             'parent' => CategoryResource::make($this->whenLoaded('subCategory'))
         ];

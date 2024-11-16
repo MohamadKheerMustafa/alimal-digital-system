@@ -44,7 +44,7 @@ class UserService implements UserInterface
         $user = User::create([
             'name' => $request->name,
             'email' => $request->email,
-            'password' => Hash::make($request->password)
+            'password' => bcrypt($request->password)
         ]);
 
         $department = Department::findOrFail($request->department_id);

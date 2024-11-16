@@ -9,7 +9,6 @@ use Illuminate\Foundation\Bus\Dispatchable;
 use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Queue\SerializesModels;
 use Illuminate\Support\Facades\Storage;
-use Exception;
 use Illuminate\Support\Facades\Log;
 
 class FileUploadJob implements ShouldQueue
@@ -19,35 +18,44 @@ class FileUploadJob implements ShouldQueue
     protected $tempPath;
     protected $user;
     protected $category;
-    protected $requestData;
+    protected $uploadData;
     protected $uploadPath;
+    protected $originalFileName;
 
-    public function __construct($tempPath, $user, $category, $requestData, $uploadPath)
+    public function __construct($tempPath, $user, $category, $uploadData, $uploadPath, $originalFileName)
     {
         $this->tempPath = $tempPath;
         $this->user = $user;
         $this->category = $category;
-        $this->requestData = $requestData;
+        $this->uploadData = $uploadData;
         $this->uploadPath = $uploadPath;
+        $this->originalFileName = $originalFileName;
     }
 
     public function handle()
     {
         try {
             $fileContents = Storage::get($this->tempPath);
-            $originalFileName = basename($this->tempPath);
-            $fileName = uniqid() . '_' . $originalFileName;
 
-            Storage::put("{$this->uploadPath}/$fileName", $fileContents);
+            // Generate a unique file name
+            $uniqueFileName = uniqid() . '_' . $this->originalFileName;
+
+            // Save the file in the designated location
+            Storage::disk('public')->put("{$this->uploadPath}/$uniqueFileName", $fileContents);
+
+            // Remove the temporary file
             Storage::delete($this->tempPath);
 
-            Archive::create(array_merge([
+            // Create an archive record
+            Archive::create([
                 'profile_id' => $this->user->profile->id,
                 'category_id' => $this->category->id,
-                'file_name' => $fileName,
-                'file_path' => "{$this->uploadPath}/$fileName",
-            ], $this->requestData));
-        } catch (Exception $e) {
+                'file_name' => $uniqueFileName,
+                'file_path' => "{$this->uploadPath}/$uniqueFileName",
+                'file_size' => $this->uploadData['file_size'],
+                'file_type' => $this->uploadData['file_extension'],
+            ]);
+        } catch (\Exception $e) {
             Log::error('File upload failed: ' . $e->getMessage());
         }
     }

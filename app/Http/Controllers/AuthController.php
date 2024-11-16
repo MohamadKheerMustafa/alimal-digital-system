@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\ApiCode;
 use App\Http\Resources\Users\UsersResource;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Log;
 use Tymon\JWTAuth\Facades\JWTAuth;
 
 class AuthController extends AppBaseController
@@ -31,7 +32,7 @@ class AuthController extends AppBaseController
         if (!$token = JWTAuth::attempt($credentials)) {
             $data = ['data' => null, 'message' => 'Unauthorized', 'statusCode' => ApiCode::UNAUTHORIZED];
         }
-
+        Log::alert($token);
         $user = auth()->user();
         $user->token = $token;
 
